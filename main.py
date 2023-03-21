@@ -70,22 +70,18 @@ def new_generation(things: list[Thing], solutions: list[Solution]) -> list[Solut
     new_generation = list()
     population_size = len(things)
 
-    # Elitism
-    top_solution = sorted(
-        solutions, key=lambda x: x.fitness(things, MAX_WEIGHT), reverse=True
-    )[0]
+    # Elitism: Add the top solution to the new generation [+ mutation]
+    top_solution = max(solutions, key=lambda x: x.fitness(things, MAX_WEIGHT))
     new_generation.extend([top_solution, mutation(top_solution)])
 
-    # Crossover
+    weights = [s.fitness(things, MAX_WEIGHT) for s in solutions]
+    if sum(weights) == 0:
+        weights = [1 for _ in weights]
+
+    # Crossover: Add children with mutations to the new generation
     while len(new_generation) < population_size:
-        weights = [s.fitness(things, MAX_WEIGHT) for s in solutions]
-        if sum(weights) == 0:
-            weights = [1 for _ in weights]
-
         parents = tuple(random.choices(solutions, weights=weights, k=2))
-        children = [mutation(c) for c in crossover(parents)]
-
-        new_generation.extend(children)
+        new_generation.extend([mutation(c) for c in crossover(parents)])
 
     return new_generation
 
