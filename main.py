@@ -1,5 +1,7 @@
 from argparse import ArgumentParser, Namespace
 import random
+from rich.console import Console
+from rich.table import Table
 
 from models import Thing, Solution
 
@@ -16,43 +18,48 @@ def main(fp: str) -> None:
             name, weight, value = line.split(";")
             things.append(Thing(name, int(weight), int(value)))
 
-    print("Gen | Weight | Value | Best solution")
-
     # Run the genetic algorithm
     solutions = list()
-    for generation_num in range(MAX_GENERATIONS):
-        solutions = genetic_algorithm(things, solutions)
+    top_solutions = list()
 
-        # Print the top solution
+    for gen in range(MAX_GENERATIONS):
+        print(f"Running generation #{gen:02}", end="\r")
+
+        solutions = new_generation(things, solutions)
+        solutions.sort(key=lambda x: x.fitness(things, MAX_WEIGHT), reverse=True)
+
         top_solution = solutions[0]
-        print(
-            f"{generation_num:>3} | {top_solution.weight(things):^6} | {top_solution.value(things):^5} | {str(top_solution)}"
+        top_solutions.append(top_solution)
+
+    print("All generations have finished.")
+    print()
+
+    c = Console()
+    table = Table(show_header=True, header_style="bold white")
+    table.add_column("Gen.", justify="center", style="cyan")
+    table.add_column("Weight", justify="center", style="magenta")
+    table.add_column("Value", justify="center", style="green")
+    table.add_column("Best solution", justify="left", style="blue")
+
+    for gen, solution in enumerate(top_solutions):
+        table.add_row(
+            str(gen),
+            str(solution.weight(things)),
+            str(solution.value(things)),
+            str(solution),
         )
-
-
-def genetic_algorithm(things: list[Thing], solutions: list[Solution]) -> list[Solution]:
-    """Runs the genetic algorithm.
-
-    This is done by creating a new generation of solutions and selecting the
-    best ones.
-    """
-
-    # Create a new generation of solutions and sort them by fitness
-    new_solutions = new_generation(things, solutions)
-    new_solutions.sort(key=lambda x: x.fitness(things, MAX_WEIGHT), reverse=True)
-
-    return new_solutions
+    c.print(table)
 
 
 def new_generation(things: list[Thing], solutions: list[Solution]) -> list[Solution]:
-    """Selects the new generation of solutions.
+    """Creates the new generation of solutions.
 
     This is done by using elitism, crossover and mutation. The amount of
     solutions in the new generation is equal to the population size. If no
     population size is given, the length of solutions is used.
     """
 
-    # First generation
+    # First generation: create random solutions
     if not solutions:
         length = len(things)
         return [
@@ -60,16 +67,15 @@ def new_generation(things: list[Thing], solutions: list[Solution]) -> list[Solut
             for _ in range(length)
         ]
 
-    # Subsequent generations
+    # Subsequent generations: Use elitism, crossover and mutation
     new_generation = list()
-    population_size = len(solutions)
+    population_size = len(things)
 
     # Elitism
-    elitism = 2 if population_size > 2 and population_size % 2 == 0 else 1
-    top_solutions = sorted(
+    top_solution = sorted(
         solutions, key=lambda x: x.fitness(things, MAX_WEIGHT), reverse=True
-    )[:elitism]
-    new_generation.extend(top_solutions)
+    )[0]
+    new_generation.extend([top_solution, mutation(top_solution)])
 
     # Crossover
     while len(new_generation) < population_size:
@@ -115,9 +121,6 @@ def mutation(solution: Solution, mut_rate: float = MUTATION_RATE) -> Solution:
     mut = Solution(
         [not bit if random.random() < mut_rate else bit for bit in solution.bits]
     )
-
-    if mut != solution:
-        print("Mutation:", solution, "->", mut)
 
     return mut
 
