@@ -7,7 +7,7 @@ from models import Thing, Solution
 
 MAX_GENERATIONS: int = 100
 MAX_WEIGHT: int = 25
-MUTATION_RATE: float = 0.05
+MUTATION_RATE: float = 0.01
 
 
 def main(fp: str) -> None:
