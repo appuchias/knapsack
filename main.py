@@ -2,6 +2,7 @@ from argparse import ArgumentParser, Namespace
 import random
 from rich.console import Console
 from rich.table import Table
+from rich import print
 
 from models import Thing, Solution
 
@@ -19,20 +20,7 @@ def main(fp: str) -> None:
             things.append(Thing(name, int(weight), int(value)))
 
     # Run the genetic algorithm
-    solutions = list()
-    top_solutions = list()
-
-    for gen in range(MAX_GENERATIONS):
-        print(f"Running generation #{gen:02}", end="\r")
-
-        solutions = new_generation(things, solutions)
-        solutions.sort(key=lambda x: x.fitness(things, MAX_WEIGHT), reverse=True)
-
-        top_solution = solutions[0]
-        top_solutions.append(top_solution)
-
-    print("All generations have finished.")
-    print()
+    top_solutions = genetic_algorithm(things)
 
     c = Console()
     table = Table(show_header=True, header_style="bold white")
@@ -49,6 +37,33 @@ def main(fp: str) -> None:
             str(solution),
         )
     c.print(table)
+
+
+def genetic_algorithm(things: list[Thing]) -> list[Solution]:
+    """Runs the genetic algorithm.
+
+    This is done by creating a new generation of solutions and selecting the
+    best solution from that generation. This process is repeated until the
+    maximum amount of generations is reached.
+    """
+
+    solutions = list()
+    top_solutions = list()
+
+    for gen in range(MAX_GENERATIONS):
+        print(f"Running generation #{gen:02}", end="\r")
+
+        solutions = new_generation(things, solutions)
+        solutions.sort(key=lambda x: x.fitness(things, MAX_WEIGHT), reverse=True)
+
+        top_solution = solutions[0]
+        top_solutions.append(top_solution)
+
+    print("All generations have finished.")
+    print()
+
+    # return max(top_solutions, key=lambda x: x.fitness(things, MAX_WEIGHT))
+    return top_solutions
 
 
 def new_generation(things: list[Thing], solutions: list[Solution]) -> list[Solution]:
