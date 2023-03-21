@@ -54,9 +54,8 @@ def main(fp: str) -> None:
 def new_generation(things: list[Thing], solutions: list[Solution]) -> list[Solution]:
     """Creates the new generation of solutions.
 
-    This is done by using elitism, crossover and mutation. The amount of
-    solutions in the new generation is equal to the population size. If no
-    population size is given, the length of solutions is used.
+    This is done by using elitism, crossover and mutation. The population size
+    of the new generation is equal to the amount of things provided.
     """
 
     # First generation: create random solutions
@@ -97,6 +96,11 @@ def crossover(parents: tuple[Solution, Solution]) -> tuple[Solution, Solution]:
     This is done by selecting a random index and swapping the bits after that
     index from the two parents.
     """
+
+    if len(parents) != 2:
+        raise ValueError("Crossover requires two parents")
+    elif len(parents[0].bits) != len(parents[1].bits):
+        raise ValueError("Parents must have the same length")
 
     crossover_index = random.randint(0, len(parents[0].bits) - 1)
 
